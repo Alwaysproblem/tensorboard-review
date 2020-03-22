@@ -1,0 +1,2 @@
+model_checkpoint_path: "embed.ckpt-4"
+all_model_checkpoint_paths: "embed.ckpt-4"

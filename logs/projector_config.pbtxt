@@ -1,0 +1,12 @@
+embeddings {
+  tensor_name: "embed0:0"
+  metadata_path: "word.tsv"
+}
+embeddings {
+  tensor_name: "embed1:0"
+  metadata_path: "word.tsv"
+}
+embeddings {
+  tensor_name: "embed2:0"
+  metadata_path: "word.tsv"
+}
