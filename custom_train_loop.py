@@ -120,6 +120,7 @@ with writer.as_default():
         # export the profiler files every step but I don't know why it can not show graph after training.
         tf.summary.trace_export(name="logitic_graph", step=e, profiler_outdir=logdir)
         tf.summary.scalar("logloss", loss_value.numpy(), step=e)
+        tf.summary.scalar("metrics", cmetric.numpy(), step=e)
         for v in model.trainable_variables:
             tf.summary.histogram(v.name, v, step=e)
         writer.flush()
