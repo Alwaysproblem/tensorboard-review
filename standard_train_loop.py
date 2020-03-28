@@ -33,8 +33,9 @@ plt.scatter(x_red[:, 0], x_red[:, 1], c = 'red' , marker='.', s = 30)
 plt.scatter(x_green[:, 0], x_green[:, 1], c = 'green', marker='.', s = 30)
 plt.show()
 
-X = np.concatenate([x_red, x_green])
-y = np.concatenate([y_red, y_green])
+X = np.concatenate([x_red, x_green]).astype(np.float32)
+y = np.concatenate([y_red, y_green]).astype(np.float32)
+
 
 #%%
 X_train, X_test, y_train, y_test = tvsplit(X, y)
