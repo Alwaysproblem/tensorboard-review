@@ -41,18 +41,22 @@ X_train, X_test, y_train, y_test = tvsplit(X, y)
 
 #%%
 class Logistic(tf.keras.models.Model):
-    def __init__(self, input_size=2, hidden_size = 5, output_size=1):
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.output_size = output_size
-#%%
-def logstic(input_size=2, hidden_size = 5, output_size=1):
-    Inputs = Input(shape=(input_size,), name="Inputs")
-    linear1 = layers.Dense(hidden_size)(Inputs)
-    Outputs = layers.Dense(output_size, activation=tf.keras.activations.sigmoid)(linear1)
-    model = tf.keras.Model(inputs=Inputs, outputs=Outputs, name="Logistic")
-    return model
-model = logstic()
+    def __init__(self, input_size=2, hidden_size = 5, output_size=1, **kwargs):
+        super().__init__(**kwargs)
+        self.dense = layers.Dense(hidden_size, name = "linear")
+        self.outlayer = layers.Dense(output_size, 
+                        activation = 'sigmoid', name = "out_layer")
+        self.inputlayer = layers.InputLayer(shape=(input_size,))
+        super().build(input_shape=(None, input_size))
+    
+    @tf.function(input_signature=[tf.TensorSpec(shape=(None, 2), dtype=tf.float32)])
+    def call(self, X):
+        X = self.inputlayer
+        X = self.dense(X)
+        Y = self.outlayer(X)
+        return Y
+
+model = Logistic()
 #%%
 model.compile(optimizer=tf.keras.optimizers.Adam(), 
               loss=tf.keras.losses.BinaryCrossentropy(),
