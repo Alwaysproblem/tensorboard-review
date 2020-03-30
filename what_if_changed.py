@@ -95,7 +95,7 @@ train_ds = df_to_examples(train)
 val_ds = df_to_examples(val)
 test_ds = df_to_examples(test)
 
-train_ds = tfexamples_input_fn(train_ds, feature_spec ,"target")
+train_ds = tfexamples_input_fn(train_ds, feature_spec,num_epochs=5 , label = "target")
 val_ds = tfexamples_input_fn(val_ds, feature_spec ,"target")
 test_ds = tfexamples_input_fn(test_ds, feature_spec ,"target")
 
@@ -136,23 +136,25 @@ feature_columns.append(crossed_feature)
 feature_layer = tf.keras.layers.DenseFeatures(feature_columns)
 
 # %%
-batch_size = 32
-train_ds = df_to_dataset(train, batch_size=batch_size)
-val_ds = df_to_dataset(val, shuffle=False, batch_size=batch_size)
-test_ds = df_to_dataset(test, shuffle=False, batch_size=batch_size)
+col = ["age", "ca", "chol", "cp", "exang", "fbs", "oldpeak", "restecg", "sex", "slope",
+ "thal", "thalach", "trestbps",]
 
-# %%
-def get_model():
+def get_model(df):
   input_dic = {}
-  inputs = Input(shape=(None, None), name="Inputs_data")
-  for i, c in enumerate(col):
-    input_dic[c] = inputs[i]
+  for c in col:
+    if df[c].dtype is np.dtype(np.int64):
+      input_dic[c] = Input(shape=(1,), dtype=tf.dtypes.int64, name = c)
+    elif df[c].dtype is np.dtype(np.float64):
+      input_dic[c] = Input(shape=(1,), dtype=tf.dtypes.float32, name = c)
+    else:
+      input_dic[c] = Input(shape=(1,), dtype=tf.dtypes.string, name = c)
+
   x = feature_layer(input_dic)
   x = layers.Dense(128, activation='relu')(x)
   x = layers.Dense(128, activation='relu')(x)
-  y = layers.Dense(1)
+  y = layers.Dense(1, activation='sigmoid')(x)
 
-  model = tf.keras.Model(inputs=inputs, outputs=y)
+  model = tf.keras.Model(inputs=input_dic, outputs=y)
 
   return model
 
@@ -162,14 +164,32 @@ def get_model():
 #   layers.Dense(128, activation='relu'),
 #   layers.Dense(1)
 # ])
-model = get_model()
-
+model = get_model(dataframe)
+#%%
 model.compile(optimizer='adam',
               loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
 model.summary()
 
-# model.fit(train_ds,
-#           validation_data=val_ds,
-#           epochs=5)
+# %%
+model.fit(train_ds, steps_per_epoch = 1,
+          validation_data=val_ds,
+          validation_steps=20,
+          epochs=5)
+
+# %%
+num_datapoints = 2000  #@param {type: "number"}
+tool_height_in_px = 1000  #@param {type: "number"}
+
+from witwidget.notebook.visualization import WitConfigBuilder
+from witwidget.notebook.visualization import WitWidget
+
+test_example = df_to_examples(dataframe)
+
+# Setup the tool with the test examples and the trained classifier
+config_builder = WitConfigBuilder(test_example[0:num_datapoints]).set_custom_predict_fn(
+    model.predict)
+a = WitWidget(config_builder, height=tool_height_in_px)
+a
+# %%
