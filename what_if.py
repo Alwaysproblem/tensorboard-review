@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 #%%
 dataframe = pd.read_csv("heart.csv")
 dataframe.head()
-
+col = dataframe.columns
 # %%
 train, test = train_test_split(dataframe, test_size=0.2)
 train, val = train_test_split(train, test_size=0.2)
@@ -24,7 +24,7 @@ print(len(test), 'test examples')
 def df_to_dataset(dataframe, shuffle=True, batch_size=32):
     dataframe = dataframe.copy()
     labels = dataframe.pop('target')
-    ds = tf.data.Dataset.from_tensor_slices(({"exp", dict(dataframe)}, labels))
+    ds = tf.data.Dataset.from_tensor_slices((dataframe.values.tolist(), labels))
     if shuffle:
         ds = ds.shuffle(buffer_size=len(dataframe))
     ds = ds.batch(batch_size)
@@ -80,20 +80,33 @@ test_ds = df_to_dataset(test, shuffle=False, batch_size=batch_size)
 
 # %%
 def get_model():
-    inputs = Input(shape=(None, None), name="Inputs_data")
-    inputs = inputs["inpu"]
+  input_dic = {}
+  inputs = Input(shape=(None, None), name="Inputs_data")
+  for i, c in enumerate(col):
+    input_dic[c] = inputs[i]
+  x = feature_layer(input_dic)
+  x = layers.Dense(128, activation='relu')(x)
+  x = layers.Dense(128, activation='relu')(x)
+  y = layers.Dense(1)
 
-model = tf.keras.Sequential([
-  feature_layer,
-  layers.Dense(128, activation='relu'),
-  layers.Dense(128, activation='relu'),
-  layers.Dense(1)
-])
+  model = tf.keras.Model(inputs=inputs, outputs=y)
+
+  return model
+
+# model = tf.keras.Sequential([
+#   feature_layer,
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(1)
+# ])
+model = get_model()
 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-model.fit(train_ds,
-          validation_data=val_ds,
-          epochs=5)
+model.summary()
+
+# model.fit(train_ds,
+#           validation_data=val_ds,
+#           epochs=5)

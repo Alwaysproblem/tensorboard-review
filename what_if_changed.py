@@ -89,21 +89,15 @@ print(len(val), 'validation examples')
 print(len(test), 'test examples')
 
 # %%
-# A utility method to create a tf.data dataset from a Pandas Dataframe
-def df_to_dataset(dataframe, shuffle=True, batch_size=32):
-    dataframe = dataframe.copy()
-    labels = dataframe.pop('target')
-    ds = tf.data.Dataset.from_tensor_slices(({"exp", dict(dataframe)}, labels))
-    if shuffle:
-        ds = ds.shuffle(buffer_size=len(dataframe))
-    ds = ds.batch(batch_size)
-    return ds
-
+feature_spec = create_feature_spec(dataframe, )
 #%%
-batch_size = 5 # A small batch sized is used for demonstration purposes
-train_ds = df_to_dataset(train, batch_size=batch_size)
-val_ds = df_to_dataset(val, shuffle=False, batch_size=batch_size)
-test_ds = df_to_dataset(test, shuffle=False, batch_size=batch_size)
+train_ds = df_to_examples(train)
+val_ds = df_to_examples(val)
+test_ds = df_to_examples(test)
+
+train_ds = tfexamples_input_fn(train_ds, feature_spec ,"target")
+val_ds = tfexamples_input_fn(val_ds, feature_spec ,"target")
+test_ds = tfexamples_input_fn(test_ds, feature_spec ,"target")
 
 #%%
 for feature_batch, label_batch in train_ds.take(1):
@@ -149,20 +143,33 @@ test_ds = df_to_dataset(test, shuffle=False, batch_size=batch_size)
 
 # %%
 def get_model():
-    inputs = Input(shape=(None, None), name="Inputs_data")
-    inputs = inputs["inpu"]
+  input_dic = {}
+  inputs = Input(shape=(None, None), name="Inputs_data")
+  for i, c in enumerate(col):
+    input_dic[c] = inputs[i]
+  x = feature_layer(input_dic)
+  x = layers.Dense(128, activation='relu')(x)
+  x = layers.Dense(128, activation='relu')(x)
+  y = layers.Dense(1)
 
-model = tf.keras.Sequential([
-  feature_layer,
-  layers.Dense(128, activation='relu'),
-  layers.Dense(128, activation='relu'),
-  layers.Dense(1)
-])
+  model = tf.keras.Model(inputs=inputs, outputs=y)
+
+  return model
+
+# model = tf.keras.Sequential([
+#   feature_layer,
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(1)
+# ])
+model = get_model()
 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-model.fit(train_ds,
-          validation_data=val_ds,
-          epochs=5)
+model.summary()
+
+# model.fit(train_ds,
+#           validation_data=val_ds,
+#           epochs=5)
