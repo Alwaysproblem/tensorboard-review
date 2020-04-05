@@ -43,10 +43,28 @@ X_train, X_test, y_train, y_test = tvsplit(X, y)
 class Logistic(tf.keras.models.Model):
     def __init__(self, input_size=2, hidden_size = 5, output_size=1, **kwargs):
         super().__init__(**kwargs)
+        self.input_size = input_size
+        self.hidden_size = hidden_size
         self.dense = layers.Dense(hidden_size, name = "linear")
         self.outlayer = layers.Dense(output_size, 
                         activation = 'sigmoid', name = "out_layer")
-        super().build(input_shape=(None, input_size))
+        self.build(input_shape=(None, self.input_size))
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        if isinstance(input_shape, tuple):
+            inputs = tf.keras.Input(shape=input_shape[1:])
+        if isinstance(input_shape, list):
+            try:
+                inputs = [tf.keras.Input(shape = (i[1:],)) 
+                                        for i in input_shape]
+            except TypeError:
+                print("User Input_shape for build funtion is not right.")
+        
+        if not hasattr(self, 'call'):
+            raise AttributeError("User should define 'call' method in sub-class model.")
+        
+        _ = self.call(inputs)
     
     # @tf.function(input_signature=[tf.TensorSpec(shape=(None, 2), dtype=tf.float32)])
     # @tf.function
