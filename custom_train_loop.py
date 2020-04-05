@@ -12,7 +12,7 @@ from datetime import datetime
 from sklearn.model_selection import train_test_split as tvsplit
 # disable logging warning and error
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
+tf.config.experimental_run_functions_eagerly(True)
 #%%
 sample_n = 100
 epochs = 50
@@ -54,13 +54,14 @@ class Logistic(tf.keras.models.Model):
         super().build(input_shape)
         if isinstance(input_shape, tuple):
             inputs = tf.keras.Input(shape=input_shape[1:])
-        if isinstance(input_shape, list):
+        elif isinstance(input_shape, list):
             try:
                 inputs = [tf.keras.Input(shape = (i[1:],)) 
                                         for i in input_shape]
             except TypeError:
                 print("User Input_shape for build funtion is not right.")
-        
+        else:
+            return
         if not hasattr(self, 'call'):
             raise AttributeError("User should define 'call' method in sub-class model.")
         
