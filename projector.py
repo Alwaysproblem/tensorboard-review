@@ -31,7 +31,7 @@ test_x = keras.preprocessing.sequence.pad_sequences(
 )
 
 #%%
-with open('./logsp/word.tsv','w',encoding='utf-8') as f:
+with open('./logs/word.tsv','w',encoding='utf-8') as f:
     for i in range(len(word2id)):
         f.write('{}\n'.format(id2word[i]))
 
@@ -101,6 +101,8 @@ class ProjectorCallback(tf.keras.callbacks.Callback):
 
 
 PCB = ProjectorCallback("./logs", 1, {"embed": "word.tsv"})
+# PCB = ProjectorCallback("./logs", 1)
+
 
 #%%
 
@@ -109,11 +111,12 @@ model.add(layers.Embedding(vocab_size, 16, name='embed'))
 model.add(layers.GlobalAveragePooling1D(name='pool'))
 model.add(layers.Dense(64, activation='relu', name='relu_layer'))
 model.add(layers.Dense(1, activation='sigmoid', name='output_layer'))
-#     model.summary()
+model.summary()
 model.compile(optimizer="adam",
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
+#%%
 x_val = train_x[:10000]
 x_train = train_x[10000:]
 y_val = train_y[:10000]
@@ -124,9 +127,10 @@ history = model.fit(x_train, y_train,
                     epochs=4, batch_size=512,
                     validation_data=(x_val, y_val),
                     verbose=1,
-                    callbacks=[ PCB ,
-                        # tf.keras.callbacks.TensorBoard("./logs/",
-                        #      histogram_freq=1, profile_batch = 3)
+                    callbacks=[ 
+                        PCB ,
+                        tf.keras.callbacks.TensorBoard("./logs/",
+                             histogram_freq=1, profile_batch = 3)
                     ])
 
 # %%
