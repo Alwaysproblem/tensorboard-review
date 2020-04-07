@@ -30,8 +30,9 @@ test_x = keras.preprocessing.sequence.pad_sequences(
     padding='post', maxlen=256
 )
 
+logdir_name = 'log'
 #%%
-with open('./logs/word.tsv','w',encoding='utf-8') as f:
+with open(f'./{logdir_name}/word.tsv','w',encoding='utf-8') as f:
     for i in range(len(word2id)):
         f.write('{}\n'.format(id2word[i]))
 
@@ -53,11 +54,13 @@ class ProjectorCallback(tf.keras.callbacks.Callback):
             raise ImportError('Failed to import TensorBoard. Please make sure that '
                             'TensorBoard integration is complete."')
         config = projector.ProjectorConfig()
-        for layer in self.model.layers:
+        for ind, layer in enumerate(self.model.layers):
             if isinstance(layer, embeddings.Embedding):
                 embedding = config.embeddings.add()
-                embedding.tensor_name = layer.embeddings.name
-
+                tensor_name = layer.embeddings.name.split('/')[-1].split(':')[0]
+                embedding.tensor_name = f"layer_with_weights-{ind}/{tensor_name}/.ATTRIBUTES/VARIABLE_VALUE"
+                
+# "layer_with_weights-0/embeddings/.ATTRIBUTES/VARIABLE_VALUE"
                 if self.embeddings_metadata is not None:
                     if isinstance(self.embeddings_metadata, str):
                         embedding.metadata_path = self.embeddings_metadata
@@ -100,7 +103,7 @@ class ProjectorCallback(tf.keras.callbacks.Callback):
             self.save_embedding(epoch)
 
 
-PCB = ProjectorCallback("./logs", 1, {"embed": "word.tsv"})
+PCB = ProjectorCallback(f"./{logdir_name}", 1, {"embed": "word.tsv"})
 # PCB = ProjectorCallback("./logs", 1)
 
 
@@ -129,8 +132,9 @@ history = model.fit(x_train, y_train,
                     verbose=1,
                     callbacks=[ 
                         PCB ,
-                        tf.keras.callbacks.TensorBoard("./logs/",
-                             histogram_freq=1, profile_batch = 3)
+                        tf.keras.callbacks.TensorBoard(f"./{logdir_name}/",
+                             histogram_freq=1, profile_batch = 3, )
+                            #  embeddings_freq = 1)
                     ])
 
 # %%

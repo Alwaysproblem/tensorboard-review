@@ -58,7 +58,7 @@ from tensorboard.plugins import projector
 def register_embedding( meta_data_fname, log_dir):
     config = projector.ProjectorConfig()
     embedding = config.embeddings.add()
-    embedding.tensor_name = 'embed/embedding:0'
+    embedding.tensor_name = "layer_with_weights-0/embeddings/.ATTRIBUTES/VARIABLE_VALUE"
     embedding.metadata_path = meta_data_fname
     projector.visualize_embeddings(log_dir,config)
 
@@ -76,8 +76,8 @@ def train_step(model,dataloader):
     # tensor_embeddings.append(tf.Variable(model.variables[0],name='embed/embedding'))
     # saver = tf.compat.v1.train.Saver(tensor_embeddings)
     # saver.save(sess=None, global_step=i, save_path='./logs/embed.ckpt')
-    # model.save_weights('./logs/embed.ckpt')
-    tf.train.Checkpoint(model=model).save(file_prefix='./logs/embed.ckpt')
+    model.save_weights('./logs/embed.ckpt')
+    # tf.train.Checkpoint(model=model).save(file_prefix='./logs/embed.ckpt')
 
 summary_file  = tf.summary.create_file_writer('./logs/')
 register_embedding('word.tsv','./logs/')
