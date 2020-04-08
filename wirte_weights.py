@@ -57,7 +57,7 @@ model.summary()
 
 #%%
 # tensorboard
-logdir = "logs_grad" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
+logdir = "logs_weights" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
 callbacks = [
     tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, write_images = True)
 ]

@@ -13,7 +13,7 @@ from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split as tvsplit
 # disable logging warning and error
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
+tf.config.experimental_run_functions_eagerly(True)
 #%%
 sample_n = 100
 epochs = 200
@@ -32,7 +32,7 @@ y_green = np.array([0] * sample_n)
 
 plt.scatter(x_red[:, 0], x_red[:, 1], c = 'red' , marker='.', s = 30)
 plt.scatter(x_green[:, 0], x_green[:, 1], c = 'green', marker='.', s = 30)
-plt.show()
+# plt.show()
 
 X = np.concatenate([x_red, x_green]).astype(np.float32)
 y = np.concatenate([y_red, y_green]).astype(np.float32)
@@ -57,25 +57,38 @@ model.summary()
 
 #%%
 class GradientCallback(tf.keras.callbacks.Callback):
-    def __init__(self, console, **kwargs):
+    def __init__(self, logdir, console, **kwargs):
+        super().__init__(**kwargs)
         self.console = console
+        self.witer = None
+        self.logdir = logdir
     
-    def on_epoch_end(self, epoch, logs=None):
-        weights = self.model.trainable_weights
+    def on_train_begin(self, logs=None):
+        self.witer = tf.summary.create_file_writer(self.logdir)
+
+    def on_train_end(self, logs=None):
+        self.witer.close()
+
+    # @tf.function
+    def on_batch_end(self, epoch, logs=None):
+        weights = self.model.trainable_weights[0]
         loss = self.model.total_loss
         optimizer = self.model.optimizer
         gradients = optimizer.get_gradients(loss, weights)
+        print(gradients)
         for t in gradients:
             if self.console:
                 print('Tensor: {}'.format(t.name))
                 print('{}\n'.format(K.get_value(t)[:10]))
             else:
-                tf.summary.histogram(t.name, data=t)
+                with self.witer.as_default():
+                    tf.summary.histogram(t.name, data=t, step=epoch)
 #%%
 # tensorboard
 logdir = "logs_grad" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
 callbacks = [
-    tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, write_images = True)
+    tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, write_images = True),
+    GradientCallback(logdir, False)
 ]
 #%%
 model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
