@@ -9,6 +9,7 @@ import numpy as np
 import time
 import os
 from datetime import datetime
+from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split as tvsplit
 # disable logging warning and error
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -53,6 +54,23 @@ model.compile(optimizer=tf.keras.optimizers.Adam(),
               loss=tf.keras.losses.BinaryCrossentropy(),
               metrics=["accuracy"])
 model.summary()
+
+#%%
+class GradientCallback(tf.keras.callbacks.Callback):
+    def __init__(self, console, **kwargs):
+        self.console = console
+    
+    def on_epoch_end(self, epoch, logs=None):
+        weights = self.model.trainable_weights
+        loss = self.model.total_loss
+        optimizer = self.model.optimizer
+        gradients = optimizer.get_gradients(loss, weights)
+        for t in gradients:
+            if self.console:
+                print('Tensor: {}'.format(t.name))
+                print('{}\n'.format(K.get_value(t)[:10]))
+            else:
+                tf.summary.histogram(t.name, data=t)
 #%%
 # tensorboard
 logdir = "logs_grad" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
