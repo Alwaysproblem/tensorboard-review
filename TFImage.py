@@ -170,7 +170,8 @@ def plot_confusion_matrix(cm, class_names):
 #%%
 logdir = "logs/image/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 # Define the basic TensorBoard callback.
-tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir, profile_batch=0, write_images=True)
+tensorboard_callback = keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq = 1,
+                                  profile_batch=0, write_images=True)
 file_writer_cm = tf.summary.create_file_writer(logdir + '/cm')
 
 # %%
