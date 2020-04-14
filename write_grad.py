@@ -70,9 +70,9 @@ class GradientCallback(tf.keras.callbacks.Callback):
         self.witer.close()
 
     # @tf.function
-    def on_batch_end(self, epoch, logs=None):
-        weights = self.model.trainable_weights[0]
-        loss = self.model.total_loss
+    def on_epoch_begin(self, epoch, logs=None):
+        weights = self.model.trainable_weights
+        loss = self.loss(self.model(self.models.inputs),)
         optimizer = self.model.optimizer
         gradients = optimizer.get_gradients(loss, weights)
         print(gradients)
@@ -88,7 +88,7 @@ class GradientCallback(tf.keras.callbacks.Callback):
 logdir = "logs_grad" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
 callbacks = [
     tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, write_images = True),
-    GradientCallback(logdir, False)
+    GradientCallback(logdir, True)
 ]
 #%%
 model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))

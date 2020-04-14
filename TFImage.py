@@ -206,3 +206,8 @@ history = model.fit(
 
 # %%
 file_writer_cm.close()
+
+
+# TODO: need fix the can not write image for CONV layer.
+# TODO: try fix problems with subclass way.
+# TODO: write a custom callbacks for display 
