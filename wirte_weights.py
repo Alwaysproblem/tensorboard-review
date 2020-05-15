@@ -60,6 +60,7 @@ model.summary()
 logdir = "logs_weights" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
 callbacks = [
     tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, write_images = True)
+    # just for normal weights not for conv layer weights, you can see the Keras source code
 ]
 #%%
 model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
