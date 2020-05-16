@@ -54,11 +54,11 @@ model.compile(optimizer=tf.keras.optimizers.Adam(),
               metrics=["accuracy"])
 model.summary()
 #%%
-# tensorboard
+# tensorboard > 2.2.1  tensorflow > 2.2  pip install tensorboard_plugin_profile
 logdir = "logs" + os.path.sep + "standard" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
 callbacks = [
     tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1,
-    profile_batch = 3) # start profiler batch.
+    profile_batch = '3,5') # start profiler batch.
 ]
 #%%
 model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
