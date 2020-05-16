@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import os
+import tensorflow_datasets as tfds
 print(tf.__version__)
 vocab_size = 10000
 
@@ -20,38 +21,49 @@ word2id['<UNUSED>'] = 3
 id2word = {v:k for k, v in word2id.items()}
 
 
-# 句子末尾padding
-train_x = keras.preprocessing.sequence.pad_sequences(
-    train_x, value=word2id['<PAD>'],
-    padding='post', maxlen=256
+# # 句子末尾padding
+# train_x = keras.preprocessing.sequence.pad_sequences(
+#     train_x, value=word2id['<PAD>'],
+#     padding='post', maxlen=256
+# )
+
+# test_x = keras.preprocessing.sequence.pad_sequences(
+#     test_x, value=word2id['<PAD>'],
+#     padding='post', maxlen=256
+# )
+
+(train_data, test_data), info = tfds.load(
+    "imdb_reviews/subwords8k",
+    split=(tfds.Split.TRAIN, tfds.Split.TEST),
+    with_info=True,
+    as_supervised=True,
+)
+encoder = info.features["text"].encoder
+
+# shuffle and pad the data.
+train_x = train_data.shuffle(1000).padded_batch(
+    10, padded_shapes=((None,), ())
+)
+test_x = test_data.shuffle(1000).padded_batch(
+    10, padded_shapes=((None,), ())
 )
 
-test_x = keras.preprocessing.sequence.pad_sequences(
-    test_x, value=word2id['<PAD>'],
-    padding='post', maxlen=256
-)
 
-logdir_name = 'log'
+logdir_name = 'log-base'
 #%%
 log_dir=f'./{logdir_name}'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+os.makedirs(log_dir + '/train', exist_ok=True)
 
-with open(f'./{logdir_name}/word.tsv','w',encoding='utf-8') as f:
+
+with open(f'./{logdir_name}/train/word.tsv','w',encoding='utf-8') as f:
     for i in range(len(word2id)):
         f.write('{}\n'.format(id2word[i]))
 
 #%%
 import os
-class ProjectorCallback(tf.keras.callbacks.Callback):
-    def __init__(self, logdir, embeddings_freq=0, embeddings_metadata=None, **kwargs):
-        super().__init__(**kwargs)
-        self.embeddings_freq = embeddings_freq
-        self.embeddings_metadata = embeddings_metadata
-        self.logdir = logdir
+class ProjectorCallback(tf.keras.callbacks.TensorBoard):
 
-    def set_model(self, model):
-        super().set_model(model)
+    def _configure_embeddings(self):
         from tensorflow.python.keras.layers import embeddings
         try:
             from tensorboard.plugins import projector
@@ -87,28 +99,14 @@ class ProjectorCallback(tf.keras.callbacks.Callback):
             def get_logdir(self):
                 return self.logdir
 
-        writer = DummyWriter(self.logdir)
+        writer = DummyWriter(self._log_write_dir + '/train')
         projector.visualize_embeddings(writer, config)
 
-    def on_train_begin(self, log=None):
-        #TODO: start the writer
-        self.writer = tf.summary.create_file_writer(self.logdir)
-        self.writer.as_default()
 
-    def on_train_end(self, log=None):
-        self.writer.close()
+PCB = ProjectorCallback(f"./{logdir_name}", histogram_freq = 1, profile_batch = 3,
+                        embeddings_freq = 1, 
+                        embeddings_metadata={"embed": "word.tsv"})
 
-    def save_embedding(self, epoch):
-        embeddings_ckpt = os.path.join(self.logdir,'keras_embedding-ckpt-{}'.format(epoch))
-        self.model.save_weights(embeddings_ckpt)
-
-    def on_epoch_end(self, epoch, logs=None):
-        if self.embeddings_freq and epoch % self.embeddings_freq == 0:
-            self.save_embedding(epoch)
-
-
-PCB = ProjectorCallback(f"./{logdir_name}", 1, {"embed": "word.tsv"})
-# PCB = ProjectorCallback("./logs", 1)
 
 
 #%%
@@ -124,21 +122,16 @@ model.compile(optimizer="adam",
               metrics=['accuracy'])
 
 #%%
-x_val = train_x[:10000]
-x_train = train_x[10000:]
-y_val = train_y[:10000]
-y_train = train_y[10000:]
-
 #%%
-history = model.fit(x_train, y_train,
+history = model.fit(train_x,
                     epochs=4, batch_size=512,
-                    validation_data=(x_val, y_val),
+                    validation_data=test_x,
                     verbose=1,
                     callbacks=[ 
                         PCB ,
-                        tf.keras.callbacks.TensorBoard(f"./{logdir_name}/",
-                             histogram_freq=1, profile_batch = 3, )
-                            #  embeddings_freq = 1)
+                        # tf.keras.callbacks.TensorBoard(f"./{logdir_name}/",
+                        #      histogram_freq=1, profile_batch = 3, )
+                        #     #  embeddings_freq = 1)
                     ])
 
 # %%
