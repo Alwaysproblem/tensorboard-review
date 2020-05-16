@@ -55,7 +55,9 @@ model.compile(optimizer=tf.keras.optimizers.Adam(),
               metrics=["accuracy"])
 model.summary()
 
+
 #%%
+# TODO: need to be modified for gradient viz or waiting for a new version
 class GradientCallback(tf.keras.callbacks.Callback):
     def __init__(self, logdir, console, **kwargs):
         super().__init__(**kwargs)
