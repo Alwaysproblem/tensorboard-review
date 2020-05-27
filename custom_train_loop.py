@@ -59,7 +59,7 @@ class Logistic(tf.keras.models.Model):
                 inputs = [tf.keras.Input(shape = (i[1:],)) 
                                         for i in input_shape]
             except TypeError:
-                print("User Input_shape for build funtion is not right.")
+                print("User Input_shape for build function is not right.")
         else:
             return
         if not hasattr(self, 'call'):
