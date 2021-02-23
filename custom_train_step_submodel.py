@@ -102,10 +102,15 @@ model.compile(optimizer=tf.keras.optimizers.Adam(),
               metrics=["accuracy"])
 model.summary()
 
-
+#%%
+# tensorboard
+logdir = "logs_custom_train_step_submodel" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
+callbacks = [
+    tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
+]
 # %%
 epochs = 200
-model.fit(x=X_train, y=y_train, epochs=epochs, validation_data=(X_test, y_test))
+model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
 
 
 # %%
