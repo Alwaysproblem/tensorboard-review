@@ -51,27 +51,34 @@ class Logistic(tf.keras.models.Model):
         super().__init__(**kwargs)
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.inputs_ = tf.keras.Input(shape=(input_size,), dtype=tf.float32, name = "Inputs")
+        self._set_input_layer(self.inputs_)
         self.dense = layers.Dense(hidden_size, name = "linear")
         self.outlayer = layers.Dense(output_size, 
                         activation = 'sigmoid', name = "out_layer")
-        self.build(input_shape=(None, self.input_size))
-
-    def build(self, input_shape):
-        super().build(input_shape)
-        if isinstance(input_shape, tuple):
-            inputs = tf.keras.Input(shape=input_shape[1:])
-        elif isinstance(input_shape, list):
-            try:
-                inputs = [tf.keras.Input(shape = (i[1:],)) 
-                                        for i in input_shape]
-            except TypeError:
-                print("User Input_shape for build function is not right.")
-        else:
-            return
-        if not hasattr(self, 'call'):
-            raise AttributeError("User should define 'call' method in sub-class model.")
+        # self.inputs = tf.nest.map_structure()
         
-        _ = self.call(inputs)
+        self.build()
+
+    def _set_input_layer(self, inputs):
+        """add inputLayer to model and display InputLayers in model.summary()
+
+        Args:
+            inputs ([dict]): the result from `tf.keras.Input`
+        """
+        if isinstance(inputs, dict):
+            self.inputs_layer = {n: tf.keras.layers.InputLayer(input_tensor=i, name=n) 
+                                    for n, i in inputs.items()}
+        elif isinstance(inputs, (list, tuple)):
+            self.inputs_layer = [tf.keras.layers.InputLayer(input_tensor=i, name=i.name) 
+                                    for i in inputs]
+        elif tf.is_tensor(inputs):
+            self.inputs_layer = tf.keras.layers.InputLayer(input_tensor=inputs, name=inputs.name)
+    
+    def build(self):
+        super(Logistic, self).build(self.inputs_.shape if tf.is_tensor(self.inputs_) else self.inputs_)
+        # super(Logistic, self).build((None, 2))
+        _ = self.call(self.inputs_)
     
     def train_step(self, data):
         x, y = data
@@ -104,13 +111,14 @@ model.summary()
 
 #%%
 # tensorboard
-logdir = "logs_custom_train_step_submodel" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
-callbacks = [
-    tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
-]
+# logdir = "logs_custom_train_step_submodel" + os.path.sep + datetime.now().strftime("""%Y%m%d-%H%M%S""")
+# callbacks = [
+#     tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
+# ]
 # %%
 epochs = 200
-model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
+model.fit(x=X_train, y=y_train, epochs=epochs, validation_data=(X_test, y_test))
+# model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks, validation_data=(X_test, y_test))
 
 
 # %%

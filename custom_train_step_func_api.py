@@ -60,7 +60,8 @@ class CustomModel(tf.keras.models.Model):
         # Update metrics (includes the metric that tracks the loss)
         self.compiled_metrics.update_state(y, y_pred)
         # Return a dict mapping metric names to current value
-        return {m.name: m.result() for m in self.metrics}
+        return {m.name: m.result() for m in self.metrics} 
+        # log grad need to be return and this result will pass to `callbacks.on_train_batch_end(end_step, logs)`
 
 #%%
 def logstic(input_size=2, hidden_size = 5, output_size=1):
